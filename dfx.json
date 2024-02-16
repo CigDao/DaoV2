@@ -1,7 +1,11 @@
 {
   "canisters": {
-    "backend": {
+    "dao": {
       "main": "src/backend/dao/main.mo",
+      "type": "motoko"
+    },
+    "treasury": {
+      "main": "src/backend/treasury/main.mo",
       "type": "motoko"
     }
   },

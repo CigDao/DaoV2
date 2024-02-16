@@ -1,0 +1,3 @@
+actor class Treasury() = this {
+
+}

@@ -1,5 +1,8 @@
 {
-  "backend": {
+  "dao": {
     "ic": "fpued-lqaaa-aaaan-qlvvq-cai"
+  },
+  "treasury": {
+    "ic": "f2tvo-kyaaa-aaaan-qlvwa-cai"
   }
 }

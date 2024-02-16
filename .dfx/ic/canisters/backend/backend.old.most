@@ -1,0 +1,23 @@
+// Version: 1.0.0
+type Proposal =
+  {
+    accepted : Bool;
+    content : Text;
+    createdAt : Int;
+    createdBy : Text;
+    ends : Int;
+    id : Nat32;
+    isActive : Bool;
+    nay : Nat;
+    proposalType : ProposalType;
+    title : Text;
+    yay : Nat
+  };
+type ProposalType = {#poll};
+type Proposal__1 = Proposal;
+actor {
+  stable var proposalCost : Nat;
+  stable var proposalId : Nat32;
+  stable proposals :
+    [var ?([var ?Nat32], [var ?Proposal__1], [var Nat], [var Nat32])]
+};

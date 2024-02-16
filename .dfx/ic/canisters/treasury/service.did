@@ -1,0 +1,2 @@
+type Treasury = service {};
+service : Treasury

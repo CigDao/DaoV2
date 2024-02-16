@@ -1,0 +1,38 @@
+type ProposalType = variant {poll;};
+type ProposalRequest = 
+ record {
+   content: text;
+   ends: int;
+   proposalType: ProposalType;
+   title: text;
+ };
+type Proposal = 
+ record {
+   accepted: bool;
+   content: text;
+   createdAt: int;
+   createdBy: text;
+   ends: int;
+   id: nat32;
+   isActive: bool;
+   nay: nat;
+   proposalType: ProposalType;
+   title: text;
+   yay: nat;
+ };
+service : {
+  commit: (nat) -> (text);
+  createProposal: (ProposalRequest, nat) -> (variant {
+                                               Err: text;
+                                               Ok: nat;
+                                             });
+  fetchProposals: () -> (vec Proposal);
+  getProposal: (nat32) -> (variant {
+                             Err: text;
+                             Ok: Proposal;
+                           });
+  vote: (nat, nat32, bool, nat) -> (variant {
+                                      Err: text;
+                                      Ok: nat;
+                                    });
+}
