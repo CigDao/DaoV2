@@ -16,6 +16,8 @@ type Proposal =
 type ProposalType = {#poll};
 type Proposal__1 = Proposal;
 actor {
+  stable commitment :
+    [var ?([var ?Text], [var ?Nat], [var Nat], [var Nat32])];
   stable var proposalCost : Nat;
   stable var proposalId : Nat32;
   stable proposals :

@@ -1,18 +1,3 @@
-type TransferFromError = 
- variant {
-   BadBurn: record {min_burn_amount: nat;};
-   BadFee: record {expected_fee: nat;};
-   CreatedInFuture: record {ledger_time: nat64;};
-   Duplicate: record {duplicate_of: nat;};
-   GenericError: record {
-                   error_code: nat;
-                   message: text;
-                 };
-   InsufficientAllowance: record {allowance: nat;};
-   InsufficientFunds: record {balance: nat;};
-   TemporarilyUnavailable;
-   TooOld;
- };
 type ProposalType = variant {poll;};
 type ProposalRequest = 
  record {
@@ -37,19 +22,19 @@ type Proposal =
  };
 type Dao = 
  service {
-   createProposal: (ProposalRequest) ->
-    (variant {
-       Err: TransferFromError;
-       Ok: nat;
-     });
+   commit: (nat) -> (text);
+   createProposal: (ProposalRequest, nat) -> (variant {
+                                                Err: text;
+                                                Ok: nat;
+                                              });
    fetchProposals: () -> (vec Proposal);
    getProposal: (nat32) -> (variant {
                               Err: text;
                               Ok: Proposal;
                             });
-   vote: (nat, nat32, bool) -> (variant {
-                                  Err: TransferFromError;
-                                  Ok: nat;
-                                });
+   vote: (nat, nat32, bool, nat) -> (variant {
+                                       Err: text;
+                                       Ok: nat;
+                                     });
  };
 service : () -> Dao

@@ -26,54 +26,6 @@ actor class Dao() = this {
   stable let proposals = Map.new<Nat32, Proposal>();
   stable let commitment = Map.new<Text, Nat>();
 
-  private func _startProposalTimer(id : Nat32) : async () {
-    ignore setTimer(
-      #nanoseconds(DAY * 3),
-      func() : async () {
-        let proposal = _getProposal(id);
-        switch (proposal) {
-          case (#Ok(proposal)) {
-            if (proposal.yay > proposal.nay) {
-              let _proposal : Proposal = {
-                id = proposal.id;
-                proposalType = proposal.proposalType;
-                title = proposal.title;
-                content = proposal.content;
-                yay = proposal.yay;
-                nay = proposal.nay;
-                ends = proposal.ends;
-                createdAt = proposal.createdAt;
-                createdBy = proposal.createdBy;
-                accepted = true;
-                isActive = false;
-              };
-              Map.set(proposals, n32hash, proposal.id, _proposal);
-            } else {
-              let _proposal : Proposal = {
-                id = proposal.id;
-                proposalType = proposal.proposalType;
-                title = proposal.title;
-                content = proposal.content;
-                yay = proposal.yay;
-                nay = proposal.nay;
-                ends = proposal.ends;
-                createdAt = proposal.createdAt;
-                createdBy = proposal.createdBy;
-                accepted = proposal.accepted;
-                isActive = false;
-              };
-              Map.set(proposals, n32hash, proposal.id, _proposal);
-            };
-          };
-          case (#Err(value)) {
-            
-          };
-        };
-
-      },
-    );
-  };
-
   public shared ({ caller }) func commit(amount : Nat) : async Text {
     let g = Source.Source();
     let uuid = UUID.toText(await g.new());
@@ -250,6 +202,53 @@ actor class Dao() = this {
         throw (Error.reject("Transaction Not Found"));
       };
     };
+  };
+
+  private func _startProposalTimer(id : Nat32) : async () {
+    ignore setTimer(
+      #nanoseconds(DAY * 3),
+      func() : async () {
+        let proposal = _getProposal(id);
+        switch (proposal) {
+          case (#Ok(proposal)) {
+            if (proposal.yay > proposal.nay) {
+              let _proposal : Proposal = {
+                id = proposal.id;
+                proposalType = proposal.proposalType;
+                title = proposal.title;
+                content = proposal.content;
+                yay = proposal.yay;
+                nay = proposal.nay;
+                ends = proposal.ends;
+                createdAt = proposal.createdAt;
+                createdBy = proposal.createdBy;
+                accepted = true;
+                isActive = false;
+              };
+              Map.set(proposals, n32hash, proposal.id, _proposal);
+            } else {
+              let _proposal : Proposal = {
+                id = proposal.id;
+                proposalType = proposal.proposalType;
+                title = proposal.title;
+                content = proposal.content;
+                yay = proposal.yay;
+                nay = proposal.nay;
+                ends = proposal.ends;
+                createdAt = proposal.createdAt;
+                createdBy = proposal.createdBy;
+                accepted = proposal.accepted;
+                isActive = false;
+              };
+              Map.set(proposals, n32hash, proposal.id, _proposal);
+            };
+          };
+          case (#Err(value)) {
+
+          };
+        };
+      },
+    );
   };
 
 };

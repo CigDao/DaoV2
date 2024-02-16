@@ -3,10 +3,11 @@ import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
 export interface Dao {
+  'commit' : ActorMethod<[bigint], string>,
   'createProposal' : ActorMethod<
-    [ProposalRequest],
+    [ProposalRequest, bigint],
     { 'Ok' : bigint } |
-      { 'Err' : TransferFromError }
+      { 'Err' : string }
   >,
   'fetchProposals' : ActorMethod<[], Array<Proposal>>,
   'getProposal' : ActorMethod<
@@ -15,9 +16,9 @@ export interface Dao {
       { 'Err' : string }
   >,
   'vote' : ActorMethod<
-    [bigint, number, boolean],
+    [bigint, number, boolean, bigint],
     { 'Ok' : bigint } |
-      { 'Err' : TransferFromError }
+      { 'Err' : string }
   >,
 }
 export interface Proposal {
@@ -40,17 +41,6 @@ export interface ProposalRequest {
   'proposalType' : ProposalType,
 }
 export type ProposalType = { 'poll' : null };
-export type TransferFromError = {
-    'GenericError' : { 'message' : string, 'error_code' : bigint }
-  } |
-  { 'TemporarilyUnavailable' : null } |
-  { 'InsufficientAllowance' : { 'allowance' : bigint } } |
-  { 'BadBurn' : { 'min_burn_amount' : bigint } } |
-  { 'Duplicate' : { 'duplicate_of' : bigint } } |
-  { 'BadFee' : { 'expected_fee' : bigint } } |
-  { 'CreatedInFuture' : { 'ledger_time' : bigint } } |
-  { 'TooOld' : null } |
-  { 'InsufficientFunds' : { 'balance' : bigint } };
 export interface _SERVICE extends Dao {}
 export declare const idlFactory: IDL.InterfaceFactory;
 export declare const init: ({ IDL }: { IDL: IDL }) => IDL.Type[];

@@ -6,20 +6,6 @@ export const idlFactory = ({ IDL }) => {
     'ends' : IDL.Int,
     'proposalType' : ProposalType,
   });
-  const TransferFromError = IDL.Variant({
-    'GenericError' : IDL.Record({
-      'message' : IDL.Text,
-      'error_code' : IDL.Nat,
-    }),
-    'TemporarilyUnavailable' : IDL.Null,
-    'InsufficientAllowance' : IDL.Record({ 'allowance' : IDL.Nat }),
-    'BadBurn' : IDL.Record({ 'min_burn_amount' : IDL.Nat }),
-    'Duplicate' : IDL.Record({ 'duplicate_of' : IDL.Nat }),
-    'BadFee' : IDL.Record({ 'expected_fee' : IDL.Nat }),
-    'CreatedInFuture' : IDL.Record({ 'ledger_time' : IDL.Nat64 }),
-    'TooOld' : IDL.Null,
-    'InsufficientFunds' : IDL.Record({ 'balance' : IDL.Nat }),
-  });
   const Proposal = IDL.Record({
     'id' : IDL.Nat32,
     'nay' : IDL.Nat,
@@ -34,9 +20,10 @@ export const idlFactory = ({ IDL }) => {
     'accepted' : IDL.Bool,
   });
   const Dao = IDL.Service({
+    'commit' : IDL.Func([IDL.Nat], [IDL.Text], []),
     'createProposal' : IDL.Func(
-        [ProposalRequest],
-        [IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : TransferFromError })],
+        [ProposalRequest, IDL.Nat],
+        [IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : IDL.Text })],
         [],
       ),
     'fetchProposals' : IDL.Func([], [IDL.Vec(Proposal)], []),
@@ -46,8 +33,8 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'vote' : IDL.Func(
-        [IDL.Nat, IDL.Nat32, IDL.Bool],
-        [IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : TransferFromError })],
+        [IDL.Nat, IDL.Nat32, IDL.Bool, IDL.Nat],
+        [IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : IDL.Text })],
         [],
       ),
   });

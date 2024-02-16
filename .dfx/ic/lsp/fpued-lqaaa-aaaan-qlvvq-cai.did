@@ -1,10 +1,9 @@
 type Dao = service {
-  createProposal : (ProposalRequest) -> (
-      variant { Ok : nat; Err : TransferFromError },
-    );
+  commit : (nat) -> (text);
+  createProposal : (ProposalRequest, nat) -> (variant { Ok : nat; Err : text });
   fetchProposals : () -> (vec Proposal);
   getProposal : (nat32) -> (variant { Ok : Proposal; Err : text });
-  vote : (nat, nat32, bool) -> (variant { Ok : nat; Err : TransferFromError });
+  vote : (nat, nat32, bool, nat) -> (variant { Ok : nat; Err : text });
 };
 type Proposal = record {
   id : nat32;
@@ -26,15 +25,4 @@ type ProposalRequest = record {
   proposalType : ProposalType;
 };
 type ProposalType = variant { poll };
-type TransferFromError = variant {
-  GenericError : record { message : text; error_code : nat };
-  TemporarilyUnavailable;
-  InsufficientAllowance : record { allowance : nat };
-  BadBurn : record { min_burn_amount : nat };
-  Duplicate : record { duplicate_of : nat };
-  BadFee : record { expected_fee : nat };
-  CreatedInFuture : record { ledger_time : nat64 };
-  TooOld;
-  InsufficientFunds : record { balance : nat };
-};
 service : Dao
