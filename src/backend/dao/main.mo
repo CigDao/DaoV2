@@ -117,6 +117,7 @@ actor class Dao() = this {
       let proposal = _getProposal(id);
       switch (proposal) {
         case (#Ok(proposal)) {
+          if (proposal.isActive == false) return #Err("This Proposal Is No Longer Active");
           if (yay) {
             let _proposal : Proposal = {
               id = proposal.id;
