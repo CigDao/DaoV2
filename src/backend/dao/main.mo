@@ -28,6 +28,21 @@ actor class Dao() = this {
     await _createProposal(caller, request);
   };
 
+  public shared ({caller}) func vote(amount : Nat, id : Nat32, yay : Bool): async {
+    #Ok : Nat;
+    #Err : ICRC2.TransferFromError;
+  } {
+     await _vote(caller, amount, id, yay);
+  };
+
+  public func fetchProposals() : async [Proposal] {
+    _fetchProposals();
+  };
+
+  public func getProposal(id:Nat32): async { #Ok : Proposal; #Err : Text } {
+    await getProposal(id);
+  };
+
   private func _createProposal(caller : Principal, request : ProposalRequest) : async {
     #Ok : Nat;
     #Err : ICRC2.TransferFromError;
