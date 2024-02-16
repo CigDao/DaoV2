@@ -1,15 +1,19 @@
 import Map "mo:map/Map";
-import { nhash; n32hash } "mo:map/Map";
+import { nhash; n32hash; thash } "mo:map/Map";
 import Nat32 "mo:base/Nat32";
 import Principal "mo:base/Principal";
 import Time "mo:base/Time";
 import Buffer "mo:base/Buffer";
 import Result "mo:base/Result";
 import Nat64 "mo:base/Nat64";
+import Blob "mo:base/Blob";
+import Error "mo:base/Error";
 import Proposal "models/Proposal";
 import { DAY; HOUR } "mo:time-consts";
 import ICRC2 "services/ICRC2";
 import Constants "../Constants";
+import Source "mo:uuid/async/SourceV4";
+import UUID "mo:uuid/UUID";
 
 actor class Dao() = this {
 
@@ -20,133 +24,114 @@ actor class Dao() = this {
   stable var proposalId : Nat32 = 1;
   stable var proposalCost : Nat = 3_000_000_000_000_000;
   stable let proposals = Map.new<Nat32, Proposal>();
+  stable let commitment = Map.new<Text, Nat>();
 
-  public shared ({ caller }) func createProposal(request : ProposalRequest) : async {
-    #Ok : Nat;
-    #Err : ICRC2.TransferFromError;
-  } {
-    await _createProposal(caller, request);
+  public shared ({ caller }) func commit(amount : Nat) : async () {
+    let g = Source.Source();
+    let uuid = UUID.toText(await g.new());
+    Map.set(commitment, thash, uuid, amount);
   };
 
-  public shared ({caller}) func vote(amount : Nat, id : Nat32, yay : Bool): async {
+  public shared ({ caller }) func createProposal(request : ProposalRequest, txIndex : Nat) : async {
     #Ok : Nat;
-    #Err : ICRC2.TransferFromError;
+    #Err : Text;
   } {
-     await _vote(caller, amount, id, yay);
+    await _createProposal(caller, request, txIndex);
+  };
+
+  public shared ({ caller }) func vote(amount : Nat, id : Nat32, yay : Bool, txIndex : Nat) : async {
+    #Ok : Nat;
+    #Err : Text;
+  } {
+    await _vote(caller, amount, id, yay, txIndex);
   };
 
   public func fetchProposals() : async [Proposal] {
     _fetchProposals();
   };
 
-  public func getProposal(id:Nat32): async { #Ok : Proposal; #Err : Text } {
+  public func getProposal(id : Nat32) : async { #Ok : Proposal; #Err : Text } {
     await getProposal(id);
   };
 
-  private func _createProposal(caller : Principal, request : ProposalRequest) : async {
+  private func _createProposal(caller : Principal, request : ProposalRequest, txIndex : Nat) : async {
     #Ok : Nat;
-    #Err : ICRC2.TransferFromError;
+    #Err : Text;
   } {
-    let args : ICRC2.TransferFromArgs = {
-      spender_subaccount = null;
-      from = { owner = caller; subaccount = null };
-      to = { owner = Principal.fromText(Constants.Treasury); subaccount = null };
-      amount = proposalCost;
-      fee = ?1000000;
-      memo = null;
-      created_at_time = ?Nat64.fromIntWrap(Time.now());
-    };
-    let result = await ICRC2.service(Constants.Token).icrc2_transfer_from(args);
-    switch (result) {
-      case (#Ok(value)) {
-        let currentProposalId = proposalId;
-        let now = Time.now();
-        let proposal : Proposal = {
-          id = currentProposalId;
-          proposalType = request.proposalType;
-          title = request.title;
-          content = request.content;
-          yay = 0;
-          nay = 0;
-          ends = now + (DAY * 3);
-          createdAt = now;
-          createdBy = Principal.toText(caller);
-          accepted = false;
-          isActive = true;
-        };
-
-        Map.set(proposals, n32hash, currentProposalId, proposal);
-        proposalId := proposalId + 1;
+    try {
+      await _verifyTransaction(caller, txIndex);
+      let currentProposalId = proposalId;
+      let now = Time.now();
+      let proposal : Proposal = {
+        id = currentProposalId;
+        proposalType = request.proposalType;
+        title = request.title;
+        content = request.content;
+        yay = 0;
+        nay = 0;
+        ends = now + (DAY * 3);
+        createdAt = now;
+        createdBy = Principal.toText(caller);
+        accepted = false;
+        isActive = true;
       };
-      case (#Err(value)) {
-
-      };
+      Map.set(proposals, n32hash, currentProposalId, proposal);
+      proposalId := proposalId + 1;
+      #Ok(Nat32.toNat(currentProposalId));
+    } catch (e) {
+      #Err(Error.message(e));
     };
-    result;
   };
 
-  private func _vote(caller : Principal, amount : Nat, id : Nat32, yay : Bool) : async {
+  private func _vote(caller : Principal, amount : Nat, id : Nat32, yay : Bool, txIndex : Nat) : async {
     #Ok : Nat;
-    #Err : ICRC2.TransferFromError;
+    #Err : Text;
   } {
-    let args : ICRC2.TransferFromArgs = {
-      spender_subaccount = null;
-      from = { owner = caller; subaccount = null };
-      to = { owner = Principal.fromText(Constants.Treasury); subaccount = null };
-      amount = amount;
-      fee = ?1000000;
-      memo = null;
-      created_at_time = ?Nat64.fromIntWrap(Time.now());
-    };
-    let result = await ICRC2.service(Constants.Token).icrc2_transfer_from(args);
-    switch (result) {
-      case (#Ok(value)) {
-        let proposal = _getProposal(id);
-        switch (proposal) {
-          case (#Ok(proposal)) {
-            if (yay) {
-              let _proposal : Proposal = {
-                id = proposal.id;
-                proposalType = proposal.proposalType;
-                title = proposal.title;
-                content = proposal.content;
-                yay = proposal.yay + amount;
-                nay = proposal.nay;
-                ends = proposal.ends;
-                createdAt = proposal.createdAt;
-                createdBy = proposal.createdBy;
-                accepted = proposal.accepted;
-                isActive = proposal.isActive;
-              };
-              Map.set(proposals, n32hash, proposal.id, _proposal);
-            } else {
-              let _proposal : Proposal = {
-                id = proposal.id;
-                proposalType = proposal.proposalType;
-                title = proposal.title;
-                content = proposal.content;
-                yay = proposal.yay;
-                nay = proposal.nay + amount;
-                ends = proposal.ends;
-                createdAt = proposal.createdAt;
-                createdBy = proposal.createdBy;
-                accepted = proposal.accepted;
-                isActive = proposal.isActive;
-              };
-              Map.set(proposals, n32hash, proposal.id, _proposal);
+    try {
+      await _verifyTransaction(caller, txIndex);
+      let proposal = _getProposal(id);
+      switch (proposal) {
+        case (#Ok(proposal)) {
+          if (yay) {
+            let _proposal : Proposal = {
+              id = proposal.id;
+              proposalType = proposal.proposalType;
+              title = proposal.title;
+              content = proposal.content;
+              yay = proposal.yay + amount;
+              nay = proposal.nay;
+              ends = proposal.ends;
+              createdAt = proposal.createdAt;
+              createdBy = proposal.createdBy;
+              accepted = proposal.accepted;
+              isActive = proposal.isActive;
             };
-          };
-          case (#Err(value)) {
-
+            Map.set(proposals, n32hash, proposal.id, _proposal);
+          } else {
+            let _proposal : Proposal = {
+              id = proposal.id;
+              proposalType = proposal.proposalType;
+              title = proposal.title;
+              content = proposal.content;
+              yay = proposal.yay;
+              nay = proposal.nay + amount;
+              ends = proposal.ends;
+              createdAt = proposal.createdAt;
+              createdBy = proposal.createdBy;
+              accepted = proposal.accepted;
+              isActive = proposal.isActive;
+            };
+            Map.set(proposals, n32hash, proposal.id, _proposal);
           };
         };
-        //credit vote
+        case (#Err(value)) {
+          return #Err(value)
+        };
       };
-      case (#Err(value)) {
-
-      };
+      #Ok(Nat32.toNat(id));
+    } catch (e) {
+      #Err(Error.message(e));
     };
-    result;
   };
 
   private func _fetchProposals() : [Proposal] {
@@ -163,6 +148,48 @@ actor class Dao() = this {
     switch (exist) {
       case (?exist) #Ok(exist);
       case (_) #Err("Proposal Not Found");
+    };
+  };
+
+  private func _verifyTransaction(caller : Principal, txIndex : Nat) : async () {
+    let from : ICRC2.Account = { owner = caller; subaccount = null };
+    let to : ICRC2.Account = {
+      owner = Principal.fromText(Constants.Treasury);
+      subaccount = null;
+    };
+    let transaction : ?ICRC2.Transaction = await ICRC2.service(Constants.Token).get_transaction(txIndex);
+    switch (transaction) {
+      case (?transaction) {
+        switch (transaction.transfer) {
+          case (?transfer) {
+            switch (transfer.memo) {
+              case (?memo) {
+                let uuid = UUID.toText(Blob.toArray(memo));
+                let amount = Map.get(commitment, thash, uuid);
+                switch (amount) {
+                  case (?amount) {
+                    if (transfer.to == to and transfer.from == from and amount == proposalCost) {
+                      Map.delete(commitment, thash, uuid);
+                    };
+                  };
+                  case (_) {
+                    throw (Error.reject("Commitment Not Found"));
+                  };
+                };
+              };
+              case (_) {
+                throw (Error.reject("Memo Not Found"));
+              };
+            };
+          };
+          case (_) {
+            throw (Error.reject("Incorrect Transaction Type"));
+          };
+        };
+      };
+      case (_) {
+        throw (Error.reject("Transaction Not Found"));
+      };
     };
   };
 
