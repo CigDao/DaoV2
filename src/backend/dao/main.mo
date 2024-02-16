@@ -42,7 +42,7 @@ actor class Dao() = this {
     activeProposalId := ?currentProposalId;
   };
 
-  private func _vote(caller:Principal, amount:Nat): async { #Ok : Nat; #Err : ICRC2.TransferFromError } {
+  private func _vote(caller:Principal, amount:Nat, id:Nat32): async { #Ok : Nat; #Err : ICRC2.TransferFromError } {
     let args: ICRC2.TransferFromArgs = {
         spender_subaccount = null;
         from = { owner = caller; subaccount = null };
@@ -55,6 +55,10 @@ actor class Dao() = this {
     let result = await ICRC2.service(Constants.Token).icrc2_transfer_from(args);
     switch(result){
       case(#Ok(value)){
+        let proposal = _getProposal(id);
+        switch(proposal){
+          //case(?proposal)
+        };
         //credit vote 
       };
       case(#Err(value)){
