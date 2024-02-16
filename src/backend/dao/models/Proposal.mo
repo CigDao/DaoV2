@@ -14,6 +14,7 @@ module {
         createdAt:Int;
         createdBy:Text;
         accepted:Bool;
+        isActive:Bool;
     };
 
     public type ProposalRequest = {
