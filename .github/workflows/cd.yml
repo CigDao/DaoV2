@@ -1,0 +1,54 @@
+name: CD
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - staging
+      - development
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+
+      - name: Deploy to development
+        if: github.base_ref == 'development'
+        run: |
+          echo ${{ secrets.DEVELOPMENT }} | base64 --decode > development.pem
+          dfx identity import --storage-mode=plaintext development development.pem
+          dfx identity use development
+          dfx deploy --network development backend
+
+      - name: Deploy to staging
+        if: github.base_ref == 'staging'
+        run: |
+          if [[ "${{ github.head_ref }}" != "development" ]]; then
+            echo "Only changes from the development branch can be merged into staging."
+            exit 1
+          else
+            echo ${{ secrets.STAGING }} | base64 --decode > staging.pem
+            dfx identity import --storage-mode=plaintext staging staging.pem
+            dfx identity use staging
+            dfx deploy --network staging backend
+          fi
+
+      - name: Check source for main
+        if: github.base_ref == 'main'
+        run: |
+          if [[ "${{ github.head_ref }}" != "staging" ]]; then
+            echo "Only changes from the staging branch can be merged into main."
+            exit 1
+          else
+            echo ${{ secrets.PROD }} | base64 --decode > prod.pem
+            dfx identity import --storage-mode=plaintext prod prod.pem
+            dfx identity use prod
+            dfx deploy --network ic backend
+          fi
