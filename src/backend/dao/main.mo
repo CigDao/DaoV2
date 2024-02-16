@@ -18,27 +18,56 @@ actor class Dao() = this {
   private type ProposalType = Proposal.ProposalType;
 
   stable var proposalId : Nat32 = 1;
+  stable var proposalCost : Nat = 3_000_000_000_000_000;
   stable let proposals = Map.new<Nat32, Proposal>();
 
-  private func _createProposal(caller : Principal, request : ProposalRequest) {
-    let currentProposalId = proposalId;
-    let now = Time.now();
-    let proposal : Proposal = {
-      id = currentProposalId;
-      proposalType = request.proposalType;
-      title = request.title;
-      content = request.content;
-      yay = 0;
-      nay = 0;
-      ends = now + (DAY * 3);
-      createdAt = now;
-      createdBy = Principal.toText(caller);
-      accepted = false;
-      isActive = true;
-    };
+  public shared ({ caller }) func createProposal(request : ProposalRequest) : async {
+    #Ok : Nat;
+    #Err : ICRC2.TransferFromError;
+  } {
+    await _createProposal(caller, request);
+  };
 
-    Map.set(proposals, n32hash, currentProposalId, proposal);
-    proposalId := proposalId + 1;
+  private func _createProposal(caller : Principal, request : ProposalRequest) : async {
+    #Ok : Nat;
+    #Err : ICRC2.TransferFromError;
+  } {
+    let args : ICRC2.TransferFromArgs = {
+      spender_subaccount = null;
+      from = { owner = caller; subaccount = null };
+      to = { owner = Principal.fromText(Constants.Treasury); subaccount = null };
+      amount = proposalCost;
+      fee = ?1000000;
+      memo = null;
+      created_at_time = ?Nat64.fromIntWrap(Time.now());
+    };
+    let result = await ICRC2.service(Constants.Token).icrc2_transfer_from(args);
+    switch (result) {
+      case (#Ok(value)) {
+        let currentProposalId = proposalId;
+        let now = Time.now();
+        let proposal : Proposal = {
+          id = currentProposalId;
+          proposalType = request.proposalType;
+          title = request.title;
+          content = request.content;
+          yay = 0;
+          nay = 0;
+          ends = now + (DAY * 3);
+          createdAt = now;
+          createdBy = Principal.toText(caller);
+          accepted = false;
+          isActive = true;
+        };
+
+        Map.set(proposals, n32hash, currentProposalId, proposal);
+        proposalId := proposalId + 1;
+      };
+      case (#Err(value)) {
+
+      };
+    };
+    result;
   };
 
   private func _vote(caller : Principal, amount : Nat, id : Nat32, yay : Bool) : async {
