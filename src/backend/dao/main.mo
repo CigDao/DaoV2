@@ -14,7 +14,7 @@ import ICRC2 "services/ICRC2";
 import Constants "../Constants";
 import Source "mo:uuid/async/SourceV4";
 import UUID "mo:uuid/UUID";
-
+import { recurringTimer; cancelTimer; setTimer } = "mo:base/Timer";
 actor class Dao() = this {
 
   private type Proposal = Proposal.Proposal;
@@ -26,11 +26,59 @@ actor class Dao() = this {
   stable let proposals = Map.new<Nat32, Proposal>();
   stable let commitment = Map.new<Text, Nat>();
 
+  private func _startProposalTimer(id : Nat32) : async () {
+    ignore setTimer(
+      #nanoseconds(DAY * 3),
+      func() : async () {
+        let proposal = _getProposal(id);
+        switch (proposal) {
+          case (#Ok(proposal)) {
+            if (proposal.yay > proposal.nay) {
+              let _proposal : Proposal = {
+                id = proposal.id;
+                proposalType = proposal.proposalType;
+                title = proposal.title;
+                content = proposal.content;
+                yay = proposal.yay;
+                nay = proposal.nay;
+                ends = proposal.ends;
+                createdAt = proposal.createdAt;
+                createdBy = proposal.createdBy;
+                accepted = true;
+                isActive = false;
+              };
+              Map.set(proposals, n32hash, proposal.id, _proposal);
+            } else {
+              let _proposal : Proposal = {
+                id = proposal.id;
+                proposalType = proposal.proposalType;
+                title = proposal.title;
+                content = proposal.content;
+                yay = proposal.yay;
+                nay = proposal.nay;
+                ends = proposal.ends;
+                createdAt = proposal.createdAt;
+                createdBy = proposal.createdBy;
+                accepted = proposal.accepted;
+                isActive = false;
+              };
+              Map.set(proposals, n32hash, proposal.id, _proposal);
+            };
+          };
+          case (#Err(value)) {
+            
+          };
+        };
+
+      },
+    );
+  };
+
   public shared ({ caller }) func commit(amount : Nat) : async Text {
     let g = Source.Source();
     let uuid = UUID.toText(await g.new());
     Map.set(commitment, thash, uuid, amount);
-    uuid
+    uuid;
   };
 
   public shared ({ caller }) func createProposal(request : ProposalRequest, txIndex : Nat) : async {
@@ -62,6 +110,7 @@ actor class Dao() = this {
     try {
       await _verifyTransaction(caller, txIndex, ?proposalCost);
       let currentProposalId = proposalId;
+      proposalId := proposalId + 1;
       let now = Time.now();
       let proposal : Proposal = {
         id = currentProposalId;
@@ -77,7 +126,7 @@ actor class Dao() = this {
         isActive = true;
       };
       Map.set(proposals, n32hash, currentProposalId, proposal);
-      proposalId := proposalId + 1;
+      await _startProposalTimer(currentProposalId);
       #Ok(Nat32.toNat(currentProposalId));
     } catch (e) {
       #Err(Error.message(e));
@@ -89,7 +138,7 @@ actor class Dao() = this {
     #Err : Text;
   } {
     try {
-      await _verifyTransaction(caller, txIndex,null);
+      await _verifyTransaction(caller, txIndex, null);
       let proposal = _getProposal(id);
       switch (proposal) {
         case (#Ok(proposal)) {
@@ -126,7 +175,7 @@ actor class Dao() = this {
           };
         };
         case (#Err(value)) {
-          return #Err(value)
+          return #Err(value);
         };
       };
       #Ok(Nat32.toNat(id));
@@ -152,7 +201,7 @@ actor class Dao() = this {
     };
   };
 
-  private func _verifyTransaction(caller : Principal, txIndex : Nat, amount:?Nat) : async () {
+  private func _verifyTransaction(caller : Principal, txIndex : Nat, amount : ?Nat) : async () {
     let from : ICRC2.Account = { owner = caller; subaccount = null };
     let to : ICRC2.Account = {
       owner = Principal.fromText(Constants.Treasury);
@@ -169,17 +218,17 @@ actor class Dao() = this {
                 let _amount = Map.get(commitment, thash, uuid);
                 switch (_amount) {
                   case (?_amount) {
-                    switch(amount){
-                      case(?amount){
+                    switch (amount) {
+                      case (?amount) {
                         if (transfer.to == to and transfer.from == from and _amount == amount) {
                           Map.delete(commitment, thash, uuid);
                         };
                       };
-                      case(_){
+                      case (_) {
                         if (transfer.to == to and transfer.from == from) {
                           Map.delete(commitment, thash, uuid);
                         };
-                      }
+                      };
                     };
                   };
                   case (_) {
