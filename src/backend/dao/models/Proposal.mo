@@ -21,6 +21,5 @@ module {
         proposalType:ProposalType;
         title:Text;
         content:Text;
-        ends:Int;
     };
 }

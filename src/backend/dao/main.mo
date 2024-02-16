@@ -9,7 +9,7 @@ import Nat64 "mo:base/Nat64";
 import Blob "mo:base/Blob";
 import Error "mo:base/Error";
 import Proposal "models/Proposal";
-import { DAY; HOUR } "mo:time-consts";
+import { DAY; HOUR; MINUTE } "mo:time-consts";
 import ICRC2 "services/ICRC2";
 import Constants "../Constants";
 import Source "mo:uuid/async/SourceV4";
@@ -25,6 +25,28 @@ actor class Dao() = this {
   stable var proposalCost : Nat = 3_000_000_000_000_000;
   stable let proposals = Map.new<Nat32, Proposal>();
   stable let commitment = Map.new<Text, Nat>();
+
+  public shared ({caller}) func mockProposal(): async Nat32 {
+      let currentProposalId = proposalId;
+      proposalId := proposalId + 1;
+      let now = Time.now();
+      let proposal : Proposal = {
+        id = currentProposalId;
+        proposalType = #poll;
+        title = "Farcaster Integration";
+        content = "Farcaster is awesome so lets use it :)";
+        yay = 0;
+        nay = 0;
+        ends = now + (DAY * 3);
+        createdAt = now;
+        createdBy = Principal.toText(caller);
+        accepted = false;
+        isActive = true;
+      };
+      Map.set(proposals, n32hash, currentProposalId, proposal);
+      await _startProposalTimer(currentProposalId);
+      currentProposalId;
+  };
 
   public shared ({ caller }) func commit(amount : Nat) : async Text {
     let g = Source.Source();
@@ -47,12 +69,12 @@ actor class Dao() = this {
     await _vote(caller, id, yay, txIndex);
   };
 
-  public func fetchProposals() : async [Proposal] {
+  public query func fetchProposals() : async [Proposal] {
     _fetchProposals();
   };
 
-  public func getProposal(id : Nat32) : async { #Ok : Proposal; #Err : Text } {
-    await getProposal(id);
+  public query func getProposal(id : Nat32) : async { #Ok : Proposal; #Err : Text } {
+    _getProposal(id);
   };
 
   private func _createProposal(caller : Principal, request : ProposalRequest, txIndex : Nat) : async {
@@ -210,7 +232,7 @@ actor class Dao() = this {
 
   private func _startProposalTimer(id : Nat32) : async () {
     ignore setTimer(
-      #nanoseconds(DAY * 3),
+      #nanoseconds(MINUTE * 10),
       func() : async () {
         let proposal = _getProposal(id);
         switch (proposal) {

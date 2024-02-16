@@ -31,8 +31,9 @@ service : {
                              Err: text;
                              Ok: Proposal;
                            });
-  vote: (nat, nat32, bool, nat) -> (variant {
-                                      Err: text;
-                                      Ok: nat;
-                                    });
+  mockProposal: () -> (nat32);
+  vote: (nat32, bool, nat) -> (variant {
+                                 Err: text;
+                                 Ok: nat;
+                               });
 }

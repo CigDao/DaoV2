@@ -27,14 +27,15 @@ type Dao =
                                                 Err: text;
                                                 Ok: nat;
                                               });
-   fetchProposals: () -> (vec Proposal);
+   fetchProposals: () -> (vec Proposal) query;
    getProposal: (nat32) -> (variant {
                               Err: text;
                               Ok: Proposal;
-                            });
-   vote: (nat, nat32, bool, nat) -> (variant {
-                                       Err: text;
-                                       Ok: nat;
-                                     });
+                            }) query;
+   mockProposal: () -> (nat32);
+   vote: (nat32, bool, nat) -> (variant {
+                                  Err: text;
+                                  Ok: nat;
+                                });
  };
 service : () -> Dao

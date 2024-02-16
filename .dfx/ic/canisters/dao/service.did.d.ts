@@ -15,8 +15,9 @@ export interface Dao {
     { 'Ok' : Proposal } |
       { 'Err' : string }
   >,
+  'mockProposal' : ActorMethod<[], number>,
   'vote' : ActorMethod<
-    [bigint, number, boolean, bigint],
+    [number, boolean, bigint],
     { 'Ok' : bigint } |
       { 'Err' : string }
   >,

@@ -1,9 +1,10 @@
 type Dao = service {
   commit : (nat) -> (text);
   createProposal : (ProposalRequest, nat) -> (variant { Ok : nat; Err : text });
-  fetchProposals : () -> (vec Proposal);
-  getProposal : (nat32) -> (variant { Ok : Proposal; Err : text });
-  vote : (nat, nat32, bool, nat) -> (variant { Ok : nat; Err : text });
+  fetchProposals : () -> (vec Proposal) query;
+  getProposal : (nat32) -> (variant { Ok : Proposal; Err : text }) query;
+  mockProposal : () -> (nat32);
+  vote : (nat32, bool, nat) -> (variant { Ok : nat; Err : text });
 };
 type Proposal = record {
   id : nat32;

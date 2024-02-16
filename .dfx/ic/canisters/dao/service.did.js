@@ -26,14 +26,15 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : IDL.Text })],
         [],
       ),
-    'fetchProposals' : IDL.Func([], [IDL.Vec(Proposal)], []),
+    'fetchProposals' : IDL.Func([], [IDL.Vec(Proposal)], ['query']),
     'getProposal' : IDL.Func(
         [IDL.Nat32],
         [IDL.Variant({ 'Ok' : Proposal, 'Err' : IDL.Text })],
-        [],
+        ['query'],
       ),
+    'mockProposal' : IDL.Func([], [IDL.Nat32], []),
     'vote' : IDL.Func(
-        [IDL.Nat, IDL.Nat32, IDL.Bool, IDL.Nat],
+        [IDL.Nat32, IDL.Bool, IDL.Nat],
         [IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : IDL.Text })],
         [],
       ),
