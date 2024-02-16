@@ -40,11 +40,11 @@ actor class Dao() = this {
     await _createProposal(caller, request, txIndex);
   };
 
-  public shared ({ caller }) func vote(amount : Nat, id : Nat32, yay : Bool, txIndex : Nat) : async {
+  public shared ({ caller }) func vote(id : Nat32, yay : Bool, txIndex : Nat) : async {
     #Ok : Nat;
     #Err : Text;
   } {
-    await _vote(caller, amount, id, yay, txIndex);
+    await _vote(caller, id, yay, txIndex);
   };
 
   public func fetchProposals() : async [Proposal] {
@@ -60,7 +60,7 @@ actor class Dao() = this {
     #Err : Text;
   } {
     try {
-      await _verifyTransaction(caller, txIndex, ?proposalCost);
+      ignore await _verifyTransaction(caller, txIndex, ?proposalCost);
       let currentProposalId = proposalId;
       proposalId := proposalId + 1;
       let now = Time.now();
@@ -85,12 +85,12 @@ actor class Dao() = this {
     };
   };
 
-  private func _vote(caller : Principal, amount : Nat, id : Nat32, yay : Bool, txIndex : Nat) : async {
+  private func _vote(caller : Principal, id : Nat32, yay : Bool, txIndex : Nat) : async {
     #Ok : Nat;
     #Err : Text;
   } {
     try {
-      await _verifyTransaction(caller, txIndex, null);
+      let amount = await _verifyTransaction(caller, txIndex, null);
       let proposal = _getProposal(id);
       switch (proposal) {
         case (#Ok(proposal)) {
@@ -153,7 +153,8 @@ actor class Dao() = this {
     };
   };
 
-  private func _verifyTransaction(caller : Principal, txIndex : Nat, amount : ?Nat) : async () {
+  private func _verifyTransaction(caller : Principal, txIndex : Nat, amount : ?Nat) : async Nat {
+    var committedAmount = 0;
     let from : ICRC2.Account = { owner = caller; subaccount = null };
     let to : ICRC2.Account = {
       owner = Principal.fromText(Constants.Treasury);
@@ -174,11 +175,13 @@ actor class Dao() = this {
                       case (?amount) {
                         if (transfer.to == to and transfer.from == from and _amount == amount) {
                           Map.delete(commitment, thash, uuid);
+                          committedAmount := _amount;
                         };
                       };
                       case (_) {
                         if (transfer.to == to and transfer.from == from) {
                           Map.delete(commitment, thash, uuid);
+                          committedAmount := _amount;
                         };
                       };
                     };
@@ -202,6 +205,7 @@ actor class Dao() = this {
         throw (Error.reject("Transaction Not Found"));
       };
     };
+    committedAmount
   };
 
   private func _startProposalTimer(id : Nat32) : async () {
