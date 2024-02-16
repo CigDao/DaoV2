@@ -26,10 +26,11 @@ actor class Dao() = this {
   stable let proposals = Map.new<Nat32, Proposal>();
   stable let commitment = Map.new<Text, Nat>();
 
-  public shared ({ caller }) func commit(amount : Nat) : async () {
+  public shared ({ caller }) func commit(amount : Nat) : async Text {
     let g = Source.Source();
     let uuid = UUID.toText(await g.new());
     Map.set(commitment, thash, uuid, amount);
+    uuid
   };
 
   public shared ({ caller }) func createProposal(request : ProposalRequest, txIndex : Nat) : async {
@@ -59,7 +60,7 @@ actor class Dao() = this {
     #Err : Text;
   } {
     try {
-      await _verifyTransaction(caller, txIndex);
+      await _verifyTransaction(caller, txIndex, ?proposalCost);
       let currentProposalId = proposalId;
       let now = Time.now();
       let proposal : Proposal = {
@@ -88,7 +89,7 @@ actor class Dao() = this {
     #Err : Text;
   } {
     try {
-      await _verifyTransaction(caller, txIndex);
+      await _verifyTransaction(caller, txIndex,null);
       let proposal = _getProposal(id);
       switch (proposal) {
         case (#Ok(proposal)) {
@@ -151,7 +152,7 @@ actor class Dao() = this {
     };
   };
 
-  private func _verifyTransaction(caller : Principal, txIndex : Nat) : async () {
+  private func _verifyTransaction(caller : Principal, txIndex : Nat, amount:?Nat) : async () {
     let from : ICRC2.Account = { owner = caller; subaccount = null };
     let to : ICRC2.Account = {
       owner = Principal.fromText(Constants.Treasury);
@@ -165,11 +166,20 @@ actor class Dao() = this {
             switch (transfer.memo) {
               case (?memo) {
                 let uuid = UUID.toText(Blob.toArray(memo));
-                let amount = Map.get(commitment, thash, uuid);
-                switch (amount) {
-                  case (?amount) {
-                    if (transfer.to == to and transfer.from == from and amount == proposalCost) {
-                      Map.delete(commitment, thash, uuid);
+                let _amount = Map.get(commitment, thash, uuid);
+                switch (_amount) {
+                  case (?_amount) {
+                    switch(amount){
+                      case(?amount){
+                        if (transfer.to == to and transfer.from == from and _amount == amount) {
+                          Map.delete(commitment, thash, uuid);
+                        };
+                      };
+                      case(_){
+                        if (transfer.to == to and transfer.from == from) {
+                          Map.delete(commitment, thash, uuid);
+                        };
+                      }
                     };
                   };
                   case (_) {
