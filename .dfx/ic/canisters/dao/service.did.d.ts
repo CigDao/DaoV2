@@ -38,7 +38,6 @@ export interface Proposal {
 export interface ProposalRequest {
   'title' : string,
   'content' : string,
-  'ends' : bigint,
   'proposalType' : ProposalType,
 }
 export type ProposalType = { 'poll' : null };

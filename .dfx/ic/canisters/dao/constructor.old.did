@@ -2,7 +2,6 @@ type ProposalType = variant {poll;};
 type ProposalRequest = 
  record {
    content: text;
-   ends: int;
    proposalType: ProposalType;
    title: text;
  };
@@ -26,11 +25,11 @@ service : {
                                                Err: text;
                                                Ok: nat;
                                              });
-  fetchProposals: () -> (vec Proposal);
+  fetchProposals: () -> (vec Proposal) query;
   getProposal: (nat32) -> (variant {
                              Err: text;
                              Ok: Proposal;
-                           });
+                           }) query;
   mockProposal: () -> (nat32);
   vote: (nat32, bool, nat) -> (variant {
                                  Err: text;

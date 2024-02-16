@@ -3,7 +3,6 @@ export const idlFactory = ({ IDL }) => {
   const ProposalRequest = IDL.Record({
     'title' : IDL.Text,
     'content' : IDL.Text,
-    'ends' : IDL.Int,
     'proposalType' : ProposalType,
   });
   const Proposal = IDL.Record({

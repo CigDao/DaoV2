@@ -22,7 +22,8 @@ actor class Dao() = this {
   private type ProposalType = Proposal.ProposalType;
 
   stable var proposalId : Nat32 = 1;
-  stable var proposalCost : Nat = 3_000_000_000_000_000;
+  //stable var proposalCost : Nat = 3_000_000_000_000_000;
+  stable var proposalCost : Nat = 10_000;
   stable let proposals = Map.new<Nat32, Proposal>();
   stable let commitment = Map.new<Text, Nat>();
 
@@ -195,16 +196,20 @@ actor class Dao() = this {
                   case (?_amount) {
                     switch (amount) {
                       case (?amount) {
-                        if (transfer.to == to and transfer.from == from and _amount == amount) {
+                        if (transfer.to == to and transfer.from == from and transfer.amount >= amount) {
                           Map.delete(commitment, thash, uuid);
                           committedAmount := _amount;
-                        };
+                        }else{
+                          throw(Error.reject("Insuffient Transaction"));
+                        }
                       };
                       case (_) {
-                        if (transfer.to == to and transfer.from == from) {
+                        if (transfer.to == to and transfer.from == from and transfer.amount >= _amount) {
                           Map.delete(commitment, thash, uuid);
                           committedAmount := _amount;
-                        };
+                        }else{
+                          throw(Error.reject("Insuffient Transaction"));
+                        }
                       };
                     };
                   };

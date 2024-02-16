@@ -2,7 +2,6 @@ type ProposalType = variant {poll;};
 type ProposalRequest = 
  record {
    content: text;
-   ends: int;
    proposalType: ProposalType;
    title: text;
  };

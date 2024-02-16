@@ -22,7 +22,6 @@ type Proposal = record {
 type ProposalRequest = record {
   title : text;
   content : text;
-  ends : int;
   proposalType : ProposalType;
 };
 type ProposalType = variant { poll };
