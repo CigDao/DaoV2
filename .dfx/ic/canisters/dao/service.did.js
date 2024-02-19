@@ -19,7 +19,7 @@ export const idlFactory = ({ IDL }) => {
     'accepted' : IDL.Bool,
   });
   const Dao = IDL.Service({
-    'commit' : IDL.Func([IDL.Nat], [IDL.Text], []),
+    'commit' : IDL.Func([IDL.Nat], [IDL.Vec(IDL.Nat8)], []),
     'createProposal' : IDL.Func(
         [ProposalRequest, IDL.Nat],
         [IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : IDL.Text })],

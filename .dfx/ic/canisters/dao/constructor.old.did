@@ -20,7 +20,7 @@ type Proposal =
    yay: nat;
  };
 service : {
-  commit: (nat) -> (text);
+  commit: (nat) -> (vec nat8);
   createProposal: (ProposalRequest, nat) -> (variant {
                                                Err: text;
                                                Ok: nat;

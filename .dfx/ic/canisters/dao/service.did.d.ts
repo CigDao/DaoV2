@@ -3,7 +3,7 @@ import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
 export interface Dao {
-  'commit' : ActorMethod<[bigint], string>,
+  'commit' : ActorMethod<[bigint], Uint8Array | number[]>,
   'createProposal' : ActorMethod<
     [ProposalRequest, bigint],
     { 'Ok' : bigint } |

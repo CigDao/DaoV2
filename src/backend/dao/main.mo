@@ -27,6 +27,8 @@ actor class Dao() = this {
   stable let proposals = Map.new<Nat32, Proposal>();
   stable let commitment = Map.new<Text, Nat>();
 
+  let duration:Nat = MINUTE * 3;
+
   public shared ({caller}) func mockProposal(): async Nat32 {
       let currentProposalId = proposalId;
       proposalId := proposalId + 1;
@@ -38,7 +40,7 @@ actor class Dao() = this {
         content = "Farcaster is awesome so lets use it :)";
         yay = 0;
         nay = 0;
-        ends = now + (DAY * 3);
+        ends = now + duration;
         createdAt = now;
         createdBy = Principal.toText(caller);
         accepted = false;
@@ -49,11 +51,12 @@ actor class Dao() = this {
       currentProposalId;
   };
 
-  public shared ({ caller }) func commit(amount : Nat) : async Text {
+  public shared ({ caller }) func commit(amount : Nat) : async [Nat8] {
     let g = Source.Source();
-    let uuid = UUID.toText(await g.new());
+    let blob = await g.new();
+    let uuid = UUID.toText(blob);
     Map.set(commitment, thash, uuid, amount);
-    uuid;
+    blob;
   };
 
   public shared ({ caller }) func createProposal(request : ProposalRequest, txIndex : Nat) : async {
@@ -83,7 +86,7 @@ actor class Dao() = this {
     #Err : Text;
   } {
     try {
-      ignore await _verifyTransaction(caller, txIndex, ?proposalCost);
+      let amount = await _verifyTransaction(caller, txIndex, ?proposalCost);
       let currentProposalId = proposalId;
       proposalId := proposalId + 1;
       let now = Time.now();
@@ -94,7 +97,7 @@ actor class Dao() = this {
         content = request.content;
         yay = 0;
         nay = 0;
-        ends = now + (DAY * 3);
+        ends = now + duration;
         createdAt = now;
         createdBy = Principal.toText(caller);
         accepted = false;
@@ -238,7 +241,7 @@ actor class Dao() = this {
 
   private func _startProposalTimer(id : Nat32) : async () {
     ignore setTimer(
-      #nanoseconds(MINUTE * 10),
+      #nanoseconds(duration),
       func() : async () {
         let proposal = _getProposal(id);
         switch (proposal) {

@@ -1,5 +1,5 @@
 type Dao = service {
-  commit : (nat) -> (text);
+  commit : (nat) -> (vec nat8);
   createProposal : (ProposalRequest, nat) -> (variant { Ok : nat; Err : text });
   fetchProposals : () -> (vec Proposal) query;
   getProposal : (nat32) -> (variant { Ok : Proposal; Err : text }) query;
