@@ -30,7 +30,6 @@ service : {
                              Err: text;
                              Ok: Proposal;
                            }) query;
-  mockProposal: () -> (nat32);
   vote: (nat32, bool, nat) -> (variant {
                                  Err: text;
                                  Ok: nat;

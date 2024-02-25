@@ -3,7 +3,6 @@ type Dao = service {
   createProposal : (ProposalRequest, nat) -> (variant { Ok : nat; Err : text });
   fetchProposals : () -> (vec Proposal) query;
   getProposal : (nat32) -> (variant { Ok : Proposal; Err : text }) query;
-  mockProposal : () -> (nat32);
   vote : (nat32, bool, nat) -> (variant { Ok : nat; Err : text });
 };
 type Proposal = record {

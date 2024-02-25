@@ -22,14 +22,14 @@ actor class Dao() = this {
   private type ProposalType = Proposal.ProposalType;
 
   stable var proposalId : Nat32 = 1;
-  //stable var proposalCost : Nat = 3_000_000_000_000_000;
-  stable var proposalCost : Nat = 10_000;
+  stable var proposalCost : Nat = 3_000_000_000_000_000;
+  //stable var proposalCost : Nat = 10_000;
   stable let proposals = Map.new<Nat32, Proposal>();
   stable let commitment = Map.new<Text, Nat>();
 
-  let duration:Nat = MINUTE * 3;
+  let duration:Nat = DAY * 3;
 
-  public shared ({caller}) func mockProposal(): async Nat32 {
+  /*public shared ({caller}) func mockProposal(): async Nat32 {
       let currentProposalId = proposalId;
       proposalId := proposalId + 1;
       let now = Time.now();
@@ -49,7 +49,7 @@ actor class Dao() = this {
       Map.set(proposals, n32hash, currentProposalId, proposal);
       await _startProposalTimer(currentProposalId);
       currentProposalId;
-  };
+  };*/
 
   public shared ({ caller }) func commit(amount : Nat) : async [Nat8] {
     let g = Source.Source();

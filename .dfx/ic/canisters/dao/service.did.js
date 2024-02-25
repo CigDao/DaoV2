@@ -31,7 +31,6 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Variant({ 'Ok' : Proposal, 'Err' : IDL.Text })],
         ['query'],
       ),
-    'mockProposal' : IDL.Func([], [IDL.Nat32], []),
     'vote' : IDL.Func(
         [IDL.Nat32, IDL.Bool, IDL.Nat],
         [IDL.Variant({ 'Ok' : IDL.Nat, 'Err' : IDL.Text })],
